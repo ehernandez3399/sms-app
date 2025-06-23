@@ -79,6 +79,7 @@ const Dashboard = () => {
               >
                 Manage Customers
               </Link>
+              <br/>
               <Link
                 to={`/businesses/${biz._id}/jobs/new`}
                 className="ml-2 bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600"
