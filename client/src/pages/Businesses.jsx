@@ -86,7 +86,13 @@ const Businesses = () => {
               className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
             >
               Manage Customers
-            </Link>
+            </Link><br></br>
+            <Link
+           to={`/businesses/${biz._id}/createcampaign`}
+           className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+         >
+           New Campaign
+         </Link>
           </li>
         ))}
       </ul>

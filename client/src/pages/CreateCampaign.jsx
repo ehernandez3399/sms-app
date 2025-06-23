@@ -42,7 +42,7 @@ export default function CreateCampaign() {
     (async () => {
       try {
         const res = await fetch(
-          `${process.env.REACT_APP_API_URL}/customers?businessId=${businessId}`,
+          `${process.env.REACT_APP_API_URL}/businesses/${businessId}/customers`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (!res.ok) throw new Error('Failed to load customers');

@@ -1,12 +1,25 @@
 const express = require('express');
-const router = express.Router();
+// ⬇️ mergeParams:true so req.params.customerId is available
+const router = express.Router({ mergeParams: true });
+
 const SmsJob = require('../models/smsJob');
 const { scheduleJob } = require('../services/scheduler');
+const SmsJob = require('../models/smsJob');
 
-// Create new SMS job
+// POST /customers/:customerId/jobs
 router.post('/', async (req, res) => {
+  const { customerId } = req.params;
+  const { businessId, type, message, schedule } = req.body;
+
   try {
-    const job = await SmsJob.create(req.body);
+    // explicitly include customerId from URL
+    const job = await SmsJob.create({
+      customerId,
+      businessId,
+      type,
+      message,
+      schedule
+    });
     await scheduleJob(job); // Schedule it right after creating
     res.status(201).json(job);
   } catch (err) {
@@ -14,14 +27,17 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Get all jobs
+// GET /customers/:customerId/jobs or GET /jobs?businessId=...
 router.get('/', async (req, res) => {
+  // if you still want to support filtering by businessId via query
   const { businessId } = req.query;
   const filter = businessId ? { businessId } : {};
 
   try {
     const jobs = await SmsJob.find(filter);
-    console.log(`[→] Fetched ${jobs.length} jobs${businessId ? ` for businessId=${businessId}` : ''}`);
+    console.log(
+      `[→] Fetched ${jobs.length} jobs${businessId ? ` for businessId=${businessId}` : ''}`
+    );
     res.json(jobs);
   } catch (err) {
     console.error('[✖] Failed to fetch jobs:', err.message);
@@ -29,8 +45,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-
-// Get one job by ID
+// GET /customers/:customerId/jobs/:id
 router.get('/:id', async (req, res) => {
   try {
     const job = await SmsJob.findById(req.params.id);
@@ -41,17 +56,19 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Update job
+// PUT /customers/:customerId/jobs/:id
 router.put('/:id', async (req, res) => {
   try {
-    const updated = await SmsJob.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await SmsJob.findByIdAndUpdate(req.params.id, req.body, {
+      new: true
+    });
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// Delete job
+// DELETE /customers/:customerId/jobs/:id
 router.delete('/:id', async (req, res) => {
   try {
     await SmsJob.findByIdAndDelete(req.params.id);
@@ -61,7 +78,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Delete all jobs
+// DELETE all (rarely used)
 router.delete('/', async (req, res) => {
   try {
     await SmsJob.deleteMany({});
@@ -71,5 +88,14 @@ router.delete('/', async (req, res) => {
   }
 });
 
+// GET /businesses/:businessId/jobs
+router.get('/:businessId/jobs', async (req, res) => {
+  try {
+    const jobs = await SmsJob.find({ businessId: req.params.businessId });
+    return res.json(jobs);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
 
 module.exports = router;

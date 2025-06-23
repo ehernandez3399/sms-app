@@ -11,29 +11,23 @@ const jobRoutes = require('./routes/jobs');
 
 async function start() {
   await connectDB();
-  await agenda.start();
 
-  // ✅ Schedule the one-time job sweeper if not already scheduled
+  // ✅ Start Agenda and schedule the one‐time sweeper
   await agenda.start();
   await agenda.every('1 minute', 'process one-time jobs');
-  await agenda.now('process one-time jobs'); // 👈 add this
+  await agenda.now('process one-time jobs');
 
   const app = express();
-  app.use(cors());  
+  app.use(cors());
   app.use(express.json());
 
-  // ✅ Register all API routes
+  // 🔥 Mount your routes in the correct order
   app.use('/auth', authRoutes);
   app.use('/businesses', authMiddleware, businessRoutes);
-  app.use(
-   '/businesses/:businessId/customers',
-  authMiddleware,
-  require('./routes/customers')
-);
-  app.use('/customers', customerRoutes);
-  app.use('/jobs', jobRoutes);
+  app.use('/businesses/:businessId/customers', authMiddleware, customerRoutes);
+  app.use('/customers/:customerId/jobs', authMiddleware, jobRoutes);
 
-  // Optional ping route
+  // Optional health check
   app.get('/ping', (req, res) => res.send('pong'));
 
   const PORT = process.env.PORT || 5000;

@@ -49,16 +49,11 @@ function AppRoutes() {
         }
       />
 
-      {/* New unified “Campaign” creation */}
-      <Route
-        path="/businesses/:businessId/jobs/new"
-        element={
-          <ProtectedRoute>
-            <CreateCampaign />
-          </ProtectedRoute>
-        }
-      />
-
+    
+       <Route
+         path="/businesses/:businessId/createcampaign"
+         element={<CreateCampaign />}
+       />
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
