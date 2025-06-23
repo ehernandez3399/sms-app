@@ -1,0 +1,166 @@
+openapi: 3.0.0
+info:
+  title: SMS-SaaS API
+  version: 0.1.0
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate client and obtain token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+
+  /businesses:
+    get:
+      summary: List businesses for authenticated client
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of businesses
+    post:
+      summary: Create a new business
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                timeZone:
+                  type: string
+                defaultFromNumber:
+                  type: string
+      responses:
+        '201':
+          description: Business created
+
+  /businesses/{businessId}/customers:
+    get:
+      summary: List customers for a business
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Array of customers
+    post:
+      summary: Create a new customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phoneNumber:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Customer created
+
+  /customers/{customerId}/jobs:
+    post:
+      summary: Schedule an SMS job
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/OneTimeJob'
+                - $ref: '#/components/schemas/RecurringJob'
+      responses:
+        '201':
+          description: Job scheduled
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    OneTimeJob:
+      type: object
+      required:
+        - type
+        - sendAt
+        - message
+      properties:
+        type:
+          type: string
+          enum: [one-time]
+        sendAt:
+          type: string
+          format: date-time
+        message:
+          type: string
+
+    RecurringJob:
+      type: object
+      required:
+        - type
+        - cron
+        - message
+      properties:
+        type:
+          type: string
+          enum: [recurring]
+        cron:
+          type: string
+          description: Cron expression for schedule
+        message:
+          type: string

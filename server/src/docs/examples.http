@@ -1,0 +1,150 @@
+// Create a new customer
+POST http://localhost:3000/customers
+Content-Type: application/json
+
+{
+  "businessId": "BUSINESS_ID",
+  "phoneNumber": "+15555551234",
+  "email": "test@example.com",
+  "firstName": "Ed",
+  "lastName": "Hernandez",
+  "tags": ["new", "vip"]
+}
+
+// Create a one-time-event job
+POST http://localhost:3000/jobs
+Content-Type: application/json
+
+{
+  "customerId": "CUSTOMER_ID",
+  "businessId": "BUSINESS_ID",
+  "type": "one-time-event",
+  "message": "Reminder: Your appointment is tomorrow!",
+  "schedule": {
+    "sendAt": "2025-06-18T14:00:00Z"
+  }
+}
+
+// Create a weekly recurring job
+POST http://localhost:3000/jobs
+Content-Type: application/json
+
+{
+  "customerId": "CUSTOMER_ID",
+  "businessId": "BUSINESS_ID",
+  "type": "weekly-recurring",
+  "message": "Don't miss our weekly Friday deals!",
+  "schedule": {
+    "sendAt": "2025-06-21T15:00:00Z",
+    "repeatEvery": "1 week",
+    "repeatOn": ["Friday"],
+    "timezone": "America/New_York"
+  }
+}
+
+// Create a bi-weekly job
+POST http://localhost:3000/jobs
+Content-Type: application/json
+
+{
+  "customerId": "CUSTOMER_ID",
+  "businessId": "BUSINESS_ID",
+  "type": "biweekly-recurring",
+  "message": "Bi-weekly payroll reminder",
+  "schedule": {
+    "sendAt": "2025-06-18T14:00:00Z",
+    "repeatEvery": "2 weeks"
+  }
+}
+
+// Create a tag-based broadcast job
+
+POST http://localhost:3000/jobs
+Content-Type: application/json
+
+{
+  "businessId": "BUSINESS_ID",
+  "type": "tag-based-broadcast",
+  "message": "Promo: 20% off for VIPs!",
+  "schedule": {
+    "sendAt": "2025-06-18T16:00:00Z",
+    "tag": "vip"
+  }
+}
+
+// Create a date-anniversary job
+ POST http://localhost:3000/jobs
+Content-Type: application/json
+
+{
+  "businessId": "BUSINESS_ID",
+  "type": "date-anniversary",
+  "message": "Happy signup anniversary!",
+  "schedule": {}
+}
+
+// Create an inactivity follow-up job
+
+POST http://localhost:3000/jobs
+Content-Type: application/json
+
+{
+  "businessId": "BUSINESS_ID",
+  "type": "inactivity-followup",
+  "message": "We miss you! Here's a 10% discount.",
+  "schedule": {
+    "inactiveForDays": 30
+  }
+}
+
+// Create a first-time welcome message
+POST http://localhost:3000/jobs
+Content-Type: application/json
+
+{
+  "businessId": "BUSINESS_ID",
+  "type": "first-time-welcome",
+  "message": "Welcome to the family!",
+  "schedule": {}
+}
+
+// Get all jobs
+GET http://localhost:3000/jobs
+
+// Get a specific job
+
+GET http://localhost:3000/jobs/JOB_ID
+
+// Update a job
+
+PUT http://localhost:3000/jobs/JOB_ID
+Content-Type: application/json
+
+{
+  "message": "Updated message",
+  "status": "paused"
+}
+
+//  Delete a job
+DELETE http://localhost:3000/jobs/JOB_ID
+
+// Get all customers
+GET http://localhost:3000/customers
+
+// Get a customers specific business
+
+GET /customers?businessId=abc123
+
+// Get a specific customer
+GET http://localhost:3000/customers/CUSTOMER_ID
+
+// Update a customer
+PUT http://localhost:3000/customers/CUSTOMER_ID
+
+{
+  "tags": ["returning", "loyal"]
+}
+
+// Delete a customer
+
+DELETE http://localhost:3000/customers/CUSTOMER_ID
