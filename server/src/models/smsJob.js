@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const smsJobSchema = new mongoose.Schema({
+  clientId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
   businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true },
   type: {

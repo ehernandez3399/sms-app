@@ -1,3 +1,4 @@
+// src/pages/Businesses.jsx
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -124,7 +125,7 @@ const Businesses = () => {
                   className="block bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                 >
                   Manage Customers
-                </Link>
+                </Link><br />
                 <Link
                   to={`/businesses/${biz._id}/createcampaign`}
                   className="block bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
@@ -134,9 +135,15 @@ const Businesses = () => {
               </div>
             </div>
 
-            {/* — Existing campaigns under each business — */}
+            {/* — Updated Existing Campaigns link — */}
             <div className="pl-4 border-l">
-              <h3 className="font-semibold mb-1">Existing Campaigns</h3>
+              <Link
+                to={`/businesses/${biz._id}/campaigns`}
+                className="block text-blue-600 hover:underline mb-2"
+              >
+                View All Campaigns
+              </Link>
+
               {loadingJobs ? (
                 <p>Loading campaigns…</p>
               ) : !jobsMap[biz._id] || jobsMap[biz._id].length === 0 ? (

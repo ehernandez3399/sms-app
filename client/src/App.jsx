@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Businesses from './pages/Businesses';
 import Customers from './pages/Customers';
 import CreateCampaign from './pages/CreateCampaign';
+import Campaigns from './pages/Campaigns';
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -56,6 +57,11 @@ function AppRoutes() {
        />
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
+
+      <Route
+    path="/businesses/:businessId/customers/:customerId/campaigns"
+    element={<Campaigns />}
+  />
     </Routes>
   );
 }
