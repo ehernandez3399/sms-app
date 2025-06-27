@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const customerSchema = new mongoose.Schema({
-  businessIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true }],
+  businessId: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true }],
   phoneNumber: { type: String },  // made optional
   email:       { type: String },  // new optional field
   firstName:   { type: String },

@@ -5,6 +5,7 @@ const SmsJob        = require('../models/smsJob');
 const Customer      = require('../models/customer');
 const Business       = require('../models/business');
 const { scheduleJob } = require('../services/scheduler');
+const mongoose = require('mongoose');
 
 // GET all campaigns for this customer (but only for the logged-in client)
 router.get('/', async (req, res) => {
@@ -21,24 +22,58 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch campaigns' });
   }
 });
+// debugging post
+// router.post('/', async (req, res) => {
+//   try {
+//     console.log('→ req.params:', req.params);
 
-// CREATE a new campaign
+//     const customer = await Customer.findById(req.params.customerId);
+//     console.log('→ loaded customer:', customer);
+//     console.log('→ customer.businessId:', customer?.businessId, typeof customer?.businessId);
+
+//     if (!customer) return res.status(404).json({ error: 'Customer not found' });
+
+//     const business = await Business.findById(customer.businessId);
+//     console.log('→ raw business (mongoose):', business && business.toObject());
+
+//     if (!business || business.clientId.toString() !== req.clientId) {
+//       return res.status(403).json({ error: 'Not authorized for this customer' });
+//     }
+
+//     // … rest of your SMS‐job creation logic …
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+//CREATE a new campaign
 router.post('/', async (req, res) => {
   try {
     // 1. Load the customer
+    console.log('i am trying to post job')
     const customer = await Customer.findById(req.params.customerId);
+    console.log(customer)
+    console.log(req.body)
     if (!customer) {
       return res.status(404).json({ error: 'Customer not found' });
     }
 
     // 2. Load the business so you can verify it belongs to this client
     const business = await Business.findById(customer.businessId);
+      console.log('→ raw business:', business && business.toObject());
+    console.log('→ fetched business:', business);
+    console.log('→ req.clientId:', req.clientId);
+    console.log('→ business.clientId:', business?.clientId?.toString());
     if (
       !business ||
       business.clientId.toString() !== req.clientId
     ) {
       return res.status(403).json({ error: 'Not authorized for this customer' });
     }
+    console.log('passed step 2')
+    console.log('→ req.clientId:', req.clientId);
+    console.log('→ business.clientId:', business.clientId.toString());  
 
     // 3. Create the job, stamping in the clientId
     const { type, message, schedule } = req.body;
