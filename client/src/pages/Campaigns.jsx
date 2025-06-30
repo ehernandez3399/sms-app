@@ -1,92 +1,130 @@
-// src/pages/Campaigns.jsx
+// client/src/pages/Campaigns.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Campaigns() {
-  const { businessId, customerId } = useParams();
+  const { businessId } = useParams();
   const { token } = useAuth();
-  const [jobs, setJobs] = useState([]);
   const navigate = useNavigate();
 
-  //  fetch all jobs for this business
+  const [jobs, setJobs]       = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
+
+  const API_URL = process.env.REACT_APP_API_URL;
+
+  // Fetch all jobs for this business
   useEffect(() => {
-    fetch(
-     `http://localhost:5000/customers/${customerId}/jobs?businessId=${businessId}`,
-      {
-        headers: { Authorization: `Bearer ${token}` }
+    async function loadJobs() {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `${API_URL}/businesses/${businessId}/jobs`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) throw new Error('Failed to fetch campaigns');
+        const data = await res.json();
+        setJobs(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-    )
-      .then(res => res.json())
-      .then(data => setJobs(data))
-      .catch(console.error);
-  }, [businessId, token]);
+    }
+    loadJobs();
+  }, [API_URL, businessId, token]);
 
-  // update the send date/time
-  const updateDate = (jobId, isoString) => {
-    fetch(
-      `/customers/anyCustomerId/jobs/${jobId}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ schedule: { sendAt: isoString } })
-      }
-    )
-      .then(res => {
-        if (!res.ok) throw new Error('Update failed');
-        setJobs(jobs.map(j =>
+  // Update the send date/time of a single job
+  const updateDate = async (jobId, isoString) => {
+    try {
+      const res = await fetch(
+        `${API_URL}/businesses/${businessId}/jobs/${jobId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ schedule: { sendAt: isoString } })
+        }
+      );
+      if (!res.ok) throw new Error('Update failed');
+      // Update local state
+      setJobs(js =>
+        js.map(j =>
           j._id === jobId
-            ? { ...j, schedule: { sendAt: isoString } }
+            ? { ...j, schedule: { ...j.schedule, sendAt: isoString } }
             : j
-        ));
-      })
-      .catch(console.error);
+        )
+      );
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  // delete a campaign
-  const deleteJob = jobId => {
-    fetch(
-      `/customers/anyCustomerId/jobs/${jobId}`,
-      {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    )
-      .then(res => {
-        if (!res.ok) throw new Error('Delete failed');
-        setJobs(jobs.filter(j => j._id !== jobId));
-      })
-      .catch(console.error);
+  // Delete a campaign
+  const deleteJob = async jobId => {
+    if (!window.confirm('Are you sure you want to delete this campaign?')) return;
+    try {
+      const res = await fetch(
+        `${API_URL}/businesses/${businessId}/jobs/${jobId}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      if (!res.ok) throw new Error('Delete failed');
+      setJobs(js => js.filter(j => j._id !== jobId));
+    } catch (err) {
+      setError(err.message);
+    }
   };
+
+  if (loading) return <div className="p-6">Loading campaigns…</div>;
+  if (error)   return <div className="p-6 text-red-600">Error: {error}</div>;
 
   return (
-    <div>
-      <button onClick={() => navigate(-1)}>← Back</button>
-      <h1>Existing Campaigns</h1>
+    <div className="p-6 max-w-4xl mx-auto space-y-4">
+      <button
+        onClick={() => navigate(-1)}
+        className="text-gray-600 hover:text-gray-800"
+      >
+        ← Back
+      </button>
 
-      {jobs.length === 0 && <p>No campaigns yet.</p>}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Campaigns</h1>
+        <Link
+          to={`/businesses/${businessId}/campaigns/new`}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          + New Campaign
+        </Link>
+      </div>
 
-      {jobs.length > 0 && (
-        <table>
+      {jobs.length === 0 ? (
+        <p>No campaigns yet.</p>
+      ) : (
+        <table className="w-full table-auto border-collapse">
           <thead>
-            <tr>
-              <th>Message</th>
-              <th>Send Date & Time</th>
-              <th>Actions</th>
+            <tr className="bg-gray-100">
+              <th className="border px-2 py-1 text-left">Message</th>
+              <th className="border px-2 py-1 text-left">Send Date &amp; Time</th>
+              <th className="border px-2 py-1 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
             {jobs.map(job => {
-              const dt = new Date(job.schedule.sendAt)
-                .toISOString()
-                .slice(0, 16);
+              // format for <input type="datetime-local">
+              const dt = job.schedule?.sendAt
+                ? new Date(job.schedule.sendAt).toISOString().slice(0, 16)
+                : '';
+
               return (
                 <tr key={job._id}>
-                  <td>{job.message}</td>
-                  <td>
+                  <td className="border px-2 py-1">{job.message}</td>
+                  <td className="border px-2 py-1">
                     <input
                       type="datetime-local"
                       value={dt}
@@ -96,10 +134,20 @@ export default function Campaigns() {
                           new Date(e.target.value).toISOString()
                         )
                       }
+                      className="border px-1 py-0.5 rounded"
                     />
                   </td>
-                  <td>
-                    <button onClick={() => deleteJob(job._id)}>
+                  <td className="border px-2 py-1 space-x-2">
+                    <Link
+                      to={`/businesses/${businessId}/campaigns/${job._id}/edit`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => deleteJob(job._id)}
+                      className="text-red-600 hover:underline"
+                    >
                       Delete
                     </button>
                   </td>

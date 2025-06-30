@@ -1,97 +1,114 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+// client/src/pages/Dashboard.jsx
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const Dashboard = () => {
-  const { token, logout } = useAuth();
-  const navigate = useNavigate();
+export default function Dashboard() {
+  const { token } = useAuth();
+  const API = process.env.REACT_APP_API_URL;
 
   const [businesses, setBusinesses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [campaigns, setCampaigns]   = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
 
-  // Fetch businesses on mount
   useEffect(() => {
-    const fetchBusinesses = async () => {
+    async function load() {
+      setLoading(true);
       try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/businesses`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (!res.ok) throw new Error('Failed to fetch businesses');
-        const data = await res.json();
-        setBusinesses(data);
+        const [bizRes, jobRes] = await Promise.all([
+          fetch(`${API}/businesses`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          fetch(`${API}/jobs`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+        if (!bizRes.ok) throw new Error('Failed to load businesses');
+        if (!jobRes.ok) throw new Error('Failed to load campaigns');
+
+        const [bizList, jobList] = await Promise.all([
+          bizRes.json(),
+          jobRes.json()
+        ]);
+
+        setBusinesses(bizList);
+        setCampaigns(jobList);
       } catch (err) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
-    };
-    fetchBusinesses();
-  }, [token]);
+    }
+    load();
+  }, [API, token]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  if (loading) return <div className="p-4">Loading businesses…</div>;
-  if (error)   return <div className="p-4 text-red-600">Error: {error}</div>;
+  if (loading) return <div className="p-6">Loading dashboard…</div>;
+  if (error)   return <div className="p-6 text-red-600">Error: {error}</div>;
 
   return (
-    <div className="p-6">
-      <header className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Your Businesses</h1>
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-        >
-          Logout
-        </button>
-      </header>
+    <div className="p-6 max-w-4xl mx-auto space-y-8">
+      <h1 className="text-3xl font-bold">Dashboard</h1>
 
-      {businesses.length === 0 ? (
-        <div>
-          <p className="mb-4">No businesses found.</p>
-          <Link
-            to="/businesses/new"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Create a Business
-          </Link>
-        </div>
-      ) : (
-        <ul className="space-y-4">
-          {businesses.map((biz) => (
-            <li
-              key={biz._id}
-              className="flex justify-between items-center p-4 border rounded shadow-sm"
+      <div className="grid grid-cols-2 gap-6">
+        {/* Businesses Panel */}
+        <div className="p-4 bg-blue-50 rounded shadow">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-lg font-medium">Businesses</h2>
+            <Link
+              to="/businesses/new"
+              className="text-blue-600 hover:underline text-sm"
             >
-              <div>
-                <h2 className="text-xl font-semibold">{biz.name}</h2>
-                <p className="text-sm text-gray-600">Timezone: {biz.timeZone}</p>
-              </div>
-              <Link
-                to={`/businesses/${biz._id}/customers`}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              >
-                Manage Customers
-              </Link>
-              <br/>
-              <Link
-                to={`/businesses/${biz._id}/jobs/new`}
-                className="ml-2 bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600"
-                >
-                New Campaign
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+              + Add
+            </Link>
+          </div>
+          <ul className="list-disc list-inside space-y-1">
+            {businesses.length > 0 ? (
+              businesses.map(b => (
+                <li key={b._id}>
+                  <Link
+                    to={`/businesses/${b._id}`}
+                    className="text-blue-800 hover:underline"
+                  >
+                    {b.name}
+                  </Link>
+                </li>
+              ))
+            ) : (
+              <li className="text-gray-600">No businesses yet.</li>
+            )}
+          </ul>
+        </div>
+
+        {/* Campaigns Panel */}
+        <div className="p-4 bg-purple-50 rounded shadow">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-lg font-medium">Campaigns</h2>
+            <Link
+              to="/businesses"
+              className="text-purple-600 hover:underline text-sm"
+            >
+              Manage
+            </Link>
+          </div>
+          <ul className="list-disc list-inside space-y-1">
+            {campaigns.length > 0 ? (
+              campaigns.map(j => (
+                <li key={j._id}>
+                  <Link
+                    to={`/businesses/${j.businessId}/campaigns/${j._id}/edit`}
+                    className="text-purple-800 hover:underline"
+                  >
+                    {j.type}
+                  </Link>
+                </li>
+              ))
+            ) : (
+              <li className="text-gray-600">No campaigns yet.</li>
+            )}
+          </ul>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default Dashboard;
+}

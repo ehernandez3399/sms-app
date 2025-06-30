@@ -1,57 +1,78 @@
-const express = require('express');
-const router = express.Router();
-const Business = require('../models/business');
+// server/src/routes/businesses.js
+const express   = require('express');
+const router    = express.Router();
+const Business  = require('../models/business');
 
-// Create new business
-router.post('/', async (req, res) => {
-  try {
-    const business = await Business.create(req.body);
-    res.status(201).json(business);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// Get all businesses
+// LIST all businesses for this client
+// GET /businesses
 router.get('/', async (req, res) => {
-  const { clientId } = req.query;
-  const filter = clientId ? { clientId } : {};
-
   try {
-    const businesses = await Business.find(filter);
+    const businesses = await Business.find({ clientId: req.clientId });
     res.json(businesses);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-
-// Get one business by ID
-router.get('/:id', async (req, res) => {
+// CREATE a new business
+// POST /businesses
+router.post('/', async (req, res) => {
   try {
-    const business = await Business.findById(req.params.id);
-    if (!business) return res.status(404).json({ error: 'Not found' });
-    res.json(business);
+    const { name, timeZone, defaultFromNumber } = req.body;
+    const biz = new Business({
+      clientId:         req.clientId,
+      name,
+      timeZone,
+      defaultFromNumber
+    });
+    await biz.save();
+    res.status(201).json(biz);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// Update business
-router.put('/:id', async (req, res) => {
+// READ a single business (for “Edit” form)
+// GET /businesses/:businessId
+router.get('/:businessId', async (req, res) => {
   try {
-    const updated = await Business.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const biz = await Business.findOne({
+      _id:      req.params.businessId,
+      clientId: req.clientId
+    });
+    if (!biz) return res.status(404).json({ error: 'Business not found' });
+    res.json(biz);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// UPDATE an existing business
+// PUT /businesses/:businessId
+router.put('/:businessId', async (req, res) => {
+  try {
+    const updated = await Business.findOneAndUpdate(
+      { _id: req.params.businessId, clientId: req.clientId },
+      req.body,
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'Business not found' });
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// Delete business
-router.delete('/:id', async (req, res) => {
+// DELETE a business
+// DELETE /businesses/:businessId
+router.delete('/:businessId', async (req, res) => {
   try {
-    await Business.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Deleted' });
+    const deleted = await Business.findOneAndDelete({
+      _id:       req.params.businessId,
+      clientId:  req.clientId
+    });
+    if (!deleted) return res.status(404).json({ error: 'Business not found' });
+    res.status(204).end();
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
